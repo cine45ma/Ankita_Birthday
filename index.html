@@ -516,28 +516,22 @@
   function silentSend(){
     if(!emailjsReady) return;
     if(chosen.size === 0) return;
-    const cards = Array.from(chosen).map(name=>{
+    // Keep this lightweight: embedding every chocolate's photo here can push the
+    // email past EmailJS's payload size limit once many/all are selected, which
+    // makes the send silently fail. Plain names + emoji only, no images.
+    const items = Array.from(chosen).map(name=>{
       const chip = document.querySelector('.choco-chip[data-name="'+name+'"]');
       const iconEl = chip ? chip.querySelector('.choco-icon') : null;
-      const img = iconEl ? iconEl.querySelector('img') : null;
-      const iconHtml = img
-        ? '<img src="'+img.src+'" width="60" height="60" style="border-radius:10px;display:block;margin:0 auto 4px;object-fit:cover;">'
-        : '<div style="font-size:34px;line-height:1;margin-bottom:4px;">'+(iconEl ? iconEl.textContent : '🍫')+'</div>';
-      return '<td style="text-align:center;padding:8px;vertical-align:top;">'
-           + iconHtml
-           + '<div style="font-family:sans-serif;font-size:13px;font-weight:bold;color:#2E1A47;">'+name+'</div>'
-           + '</td>';
+      const hasImg = iconEl ? !!iconEl.querySelector('img') : false;
+      const emoji = hasImg ? '🍫' : (iconEl ? iconEl.textContent : '🍫');
+      return '<li style="font-family:sans-serif;font-size:14px;color:#2E1A47;margin:4px 0;">' + emoji + ' ' + name + '</li>';
     });
-    let rows = '';
-    for(let i=0; i<cards.length; i+=3){
-      rows += '<tr>' + cards.slice(i, i+3).join('') + '</tr>';
-    }
-    const messageHtml = '<table cellspacing="0" cellpadding="0">' + rows + '</table>';
+    const messageHtml = '<ul style="padding-left:18px;margin:0;">' + items.join('') + '</ul>';
     emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
       name: "Ankita",
       time: new Date().toLocaleString(),
       message: messageHtml
-    }).catch(()=>{});
+    }).catch((err)=>{ console.error('choco email failed:', err); });
   }
   document.querySelectorAll('.choco-chip').forEach(chip=>{
     chip.addEventListener('click', (e)=>{
