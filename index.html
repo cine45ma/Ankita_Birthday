@@ -516,22 +516,18 @@
   function silentSend(){
     if(!emailjsReady) return;
     if(chosen.size === 0) return;
-    // Keep this lightweight: embedding every chocolate's photo here can push the
-    // email past EmailJS's payload size limit once many/all are selected, which
-    // makes the send silently fail. Plain names + emoji only, no images.
-    const items = Array.from(chosen).map(name=>{
-      const chip = document.querySelector('.choco-chip[data-name="'+name+'"]');
-      const iconEl = chip ? chip.querySelector('.choco-icon') : null;
-      const hasImg = iconEl ? !!iconEl.querySelector('img') : false;
-      const emoji = hasImg ? '🍫' : (iconEl ? iconEl.textContent : '🍫');
-      return '<li style="font-family:sans-serif;font-size:14px;color:#2E1A47;margin:4px 0;">' + emoji + ' ' + name + '</li>';
-    });
-    const messageHtml = '<ul style="padding-left:18px;margin:0;">' + items.join('') + '</ul>';
+    // Plain text only, no HTML/markup/images — keeps the payload tiny no matter
+    // how many chocolates are picked.
+    const namesText = Array.from(chosen).join(', ');
     emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
       name: "Ankita",
       time: new Date().toLocaleString(),
-      message: messageHtml
-    }).catch((err)=>{ console.error('choco email failed:', err); });
+      message: "Ankita's chocolate picks: " + namesText
+    }).then(()=>{
+      console.log('choco email sent OK:', namesText);
+    }).catch((err)=>{
+      console.error('choco email FAILED:', err && err.text ? err.text : err, err && err.status ? ('status='+err.status) : '');
+    });
   }
   document.querySelectorAll('.choco-chip').forEach(chip=>{
     chip.addEventListener('click', (e)=>{
